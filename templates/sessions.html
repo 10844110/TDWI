@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container my-5">
+  <div class="text-center mb-4">
+    <h1 class="dashboard-title mb-2">Sessions Analysis Dashboard</h1>
+    <div class="subtle">
+      Year-by-year insights · Trend analytics · Word Cloud · TF-IDF “What’s new this year” · Topic Clusters
+    </div>
+
+    <div class="d-flex justify-content-center mt-3">
+      <div class="d-flex gap-2 align-items-center">
+        <span class="subtle small">Keyword Mode</span>
+        <select id="keywordMode" class="form-select form-select-sm" style="width: 170px;">
+          <option value="tech" selected>Tech-only (recommended)</option>
+          <option value="open">Open (compare)</option>
+        </select>
+        <button class="btn btn-sm btn-outline-primary" id="btnReloadAll">Reload All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card card-dashboard p-3 h-100">
+        <div class="subtle text-uppercase small">Total Sessions</div>
+        <div class="kpi" id="kpiTotal">-</div>
+        <div class="subtle small">All years combined</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-dashboard p-3 h-100">
+        <div class="subtle text-uppercase small">Years Covered</div>
+        <div class="kpi" id="kpiYears">-</div>
+        <div class="subtle small">From DB sessions.year</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-dashboard p-3 h-100">
+        <div class="subtle text-uppercase small">Peak Year</div>
+        <div class="kpi" id="kpiPeak">-</div>
+        <div class="subtle small">Most sessions</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-dashboard p-3 h-100">
+        <div class="subtle text-uppercase small">% With Abstract</div>
+        <div class="kpi" id="kpiAbstract">-</div>
+        <div class="subtle small">Coverage indicator</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions per year + YoY -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-end">
+      <div>
+        <div class="section-title">1) Sessions per Year + YoY Growth</div>
+        <div class="subtle">Bar = sessions count, Line = year-over-year growth (%)</div>
+      </div>
+      <div class="pill" id="pillTracks">Unique Tracks: -</div>
+      <div class="pill" id="pillDuration">Avg Duration: -</div>
+    </div>
+    <hr class="soft">
+    <canvas id="chartSessionsYoY"></canvas>
+  </div>
+
+  <!-- Track + diversity -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="section-title">2) Track Trends + Track Diversity</div>
+    <div class="subtle">Stacked bars show top tracks (global top K). Line shows unique track count per year.</div>
+    <hr class="soft">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <canvas id="chartTracks"></canvas>
+      </div>
+      <div class="col-lg-4">
+        <div class="subtle small mb-2">Top Tracks (Global)</div>
+        <div id="trackList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language trend  -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="section-title">3) Language Distribution Over Time</div>
+    <div class="subtle">Language encoding in DB: 1 = German, 0 = English (others shown as lang=&lt;value&gt;).</div>
+    <hr class="soft">
+    <canvas id="chartLang"></canvas>
+  </div>
+
+  <!-- remove Abstract coverage chart -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="section-title">4) Abstract Length Over Time</div>
+    <div class="subtle">Abstract length distribution (mean/median/p75) per year. (Coverage chart removed)</div>
+    <hr class="soft">
+    <canvas id="chartAbstractLen"></canvas>
+  </div>
+
+  <!-- Word Cloud -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+      <div>
+        <div class="section-title">5) Word Cloud (Yearly + Field)</div>
+        <div class="subtle">
+          Uses phrases + semantic normalization. In Tech-only mode, non-tech terms are filtered out.
+        </div>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <select id="wcYear" class="form-select form-select-sm" style="width:140px;"></select>
+        <select id="wcField" class="form-select form-select-sm" style="width:160px;">
+          <option value="all">Title + Abstract</option>
+          <option value="title">Title only</option>
+          <option value="abstract">Abstract only</option>
+        </select>
+        <button class="btn btn-sm btn-primary" id="btnReloadWC">Reload</button>
+      </div>
+    </div>
+    <hr class="soft">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div id="wordcloud" style="width:100%;height:420px;border:1px solid #eef2ff;border-radius:14px; overflow:hidden;"></div>
+      </div>
+      <div class="col-lg-4">
+        <div class="subtle small mb-2">Top terms (same data as word cloud)</div>
+        <div id="wcTopTerms"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TF-IDF trending -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+      <div>
+        <div class="section-title">6) “What’s New This Year?” (TF-IDF by Year)</div>
+        <div class="subtle">Distinctive terms in a year compared to other years (year-as-document TF-IDF).</div>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <select id="tfidfYear" class="form-select form-select-sm" style="width:140px;"></select>
+        <button class="btn btn-sm btn-outline-primary" id="btnReloadTFIDF">Reload</button>
+      </div>
+    </div>
+    <hr class="soft">
+    <canvas id="chartTFIDF"></canvas>
+    <hr class="soft">
+    <div class="subtle small mb-2">Click a term below to plot its frequency trend:</div>
+    <div id="termButtons"></div>
+    <hr class="soft">
+    <canvas id="chartTermTrend"></canvas>
+  </div>
+
+  <!-- Clusters -->
+  <div class="card card-dashboard p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+      <div>
+        <div class="section-title">7) Topic Clusters (KMeans on TF-IDF)</div>
+        <div class="subtle">Automatically groups sessions by textual similarity; shows cluster distribution across years.</div>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <select id="clusterK" class="form-select form-select-sm" style="width:120px;">
+          <option value="5">k=5</option>
+          <option value="6" selected>k=6</option>
+          <option value="7">k=7</option>
+          <option value="8">k=8</option>
+        </select>
+        <button class="btn btn-sm btn-outline-primary" id="btnReloadCluster">Reload</button>
+      </div>
+    </div>
+    <hr class="soft">
+    <div class="row g-3">
+      <div class="col-lg-7">
+        <canvas id="chartClusterDist"></canvas>
+      </div>
+      <div class="col-lg-5">
+        <div class="subtle small mb-2">Cluster labels (top terms)</div>
+        <table class="table table-sm mini-table">
+          <thead>
+            <tr>
+              <th style="width:80px;">Cluster</th>
+              <th>Top terms</th>
+            </tr>
+          </thead>
+          <tbody id="clusterTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+
+
+{% endblock %}

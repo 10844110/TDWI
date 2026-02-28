@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Hero -->
+<section class="hero p-4 p-md-5 mb-4">
+  <div class="row align-items-center g-4">
+    <div class="col-md-8">
+      <h1 class="display-6 fw-extrabold mb-2">
+        TDWI München Program Explorer
+      </h1>
+      <p class="lead text-muted mb-3">
+        Explore conference sessions and speakers (2022–2025).  
+        Find speaker activity per year, company presence, and session trends.
+      </p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary btn-lg" href="/speakers">Explore Speakers</a>
+        <a class="btn btn-outline-primary btn-lg" href="/companies">Explore Companies/Affiliation</a>
+        <a class="btn btn-light btn-lg" href="/sessions">Browse Sessions</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="hero-stat">
+        <div class="stat-card">
+          <div class="stat-title">Years Covered</div>
+          <div class="stat-value">2022–2025</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Analysis</div>
+          <div class="stat-value">Speakers · Companies/Affiliation · Sessions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Actions -->
+<section class="row g-3">
+  <div class="col-12">
+    <h3 class="fw-bold mb-1">Quick Insights</h3>
+    <div class="text-muted">Jump into the most common analyses.</div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card glass-card h-100">
+      <div class="card-body">
+        <div class="icon-badge mb-3">🎤</div>
+        <h5 class="card-title fw-bold">Speaker Activity</h5>
+        <p class="card-text text-muted">
+          Check how many talks a speaker delivered per year.
+        </p>
+        <a class="btn btn-primary w-100" href="/speakers">Go to Speakers</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card glass-card h-100">
+      <div class="card-body">
+        <div class="icon-badge mb-3">🏢</div>
+        <h5 class="card-title fw-bold">Company/Affiliation Presence</h5>
+        <p class="card-text text-muted">
+          See how often a company appears across years.
+        </p>
+        <a class="btn btn-primary w-100" href="/companies">Go to Companies/Affiliation</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card glass-card h-100">
+      <div class="card-body">
+        <div class="icon-badge mb-3">📚</div>
+        <h5 class="card-title fw-bold">Session Browser</h5>
+        <p class="card-text text-muted">
+          Filter sessions by year, track, language, or keywords.
+        </p>
+        <a class="btn btn-primary w-100" href="/sessions">Go to Sessions</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

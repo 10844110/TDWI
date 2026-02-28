@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-1">Company/Affiliation Analysis</h3>
+    <p class="text-muted small mb-0">
+      Explore how each company/affiliation contributes across years, tracks, languages and speakers.
+    </p>
+  </div>
+</div>
+
+<!-- Top: search + KPI -->
+<div class="row g-3 mb-3">
+
+  <!-- Search panel -->
+  <div class="col-xl-8 col-lg-7">
+    <div class="card shadow-sm glass-card">
+      <div class="card-body">
+        <div class="d-flex flex-wrap align-items-end gap-3">
+          <div class="flex-grow-1">
+            <label class="form-label small text-muted mb-1">Company/Affiliation</label>
+            <input id="companyName" class="form-control" placeholder="Enter company name" list="companySuggestions">
+            <datalist id="companySuggestions"></datalist>
+          </div>
+          <div style="min-width: 160px;">
+            <label class="form-label small text-muted mb-1">Year (optional)</label>
+            <select id="companyYear" class="form-select">
+              <option value="">All years</option>
+              {% for y in years %}
+              <option value="{{ y }}">{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-primary px-4" onclick="loadCompanyAnalysis()">
+              Run analysis
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI card -->
+  <div class="col-xl-4 col-lg-5">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <div>
+            <h6 class="mb-1">Company/Affiliation overview</h6>
+            <small class="text-muted">Key stats for the selected company</small>
+          </div>
+          <div class="icon-badge">
+            <i class="bi bi-building"></i>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-4">
+            <div class="text-muted small">Total talks</div>
+            <div class="fw-semibold fs-5" id="metricCompanyTotalTalks">–</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Active years</div>
+            <div class="fw-semibold fs-5" id="metricCompanyActiveYears">–</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Speakers</div>
+            <div class="fw-semibold fs-5" id="metricCompanySpeakers">–</div>
+          </div>
+        </div>
+
+        <div class="mt-3 small text-muted" id="metricCompanySummary">
+          Run an analysis to understand this company’s presence in the conference.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Middle: per-company charts -->
+<div class="row g-3">
+
+  <!-- Talks per year -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Talks per year</h6>
+            <small class="text-muted">
+              Year-over-year visibility of this company
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="companyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language distribution -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Language distribution</h6>
+            <small class="text-muted">
+              Share of talks in each conference language
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="companyLangChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Track coverage -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Track coverage</h6>
+            <small class="text-muted">
+              Program tracks where this company/affiliation appears
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="companyTrackChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top speakers for this company -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Top speakers for this company</h6>
+            <small class="text-muted">
+              Speakers ranked by number of talks for the selected company/affiliation
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="companySpeakerChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session table -->
+  <div class="col-12">
+    <div class="card shadow-sm glass-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Session details</h6>
+          <small class="text-muted">
+            All sessions where this company is represented
+          </small>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="small text-muted">
+              <tr>
+                <th>Year</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Track</th>
+                <th>Lang</th>
+                <th>Title</th>
+                <th>Speaker</th>
+              </tr>
+            </thead>
+            <tbody id="companySessionsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<hr class="my-4">
+
+<!-- Bottom: global trend & ranking -->
+<div class="row g-3 align-items-stretch">
+
+  <!-- Unique companies per year -->
+  <div class="col-lg-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="mb-2">
+          <h5 class="mb-1">Unique companies/affiliation per year</h5>
+          <small class="text-muted">Overall diversity of organisations represented</small>
+        </div>
+
+        <div class="chart-fixed-260 flex-grow-1" id="uniqueCompaniesWrap">
+          <canvas id="uniqueCompaniesChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top companies -->
+  <div class="col-lg-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h5 class="mb-1">Top companies/affiliation</h5>
+            <small class="text-muted">Ranking by number of talks in the selected year</small>
+          </div>
+          <div style="min-width:150px;">
+            <select id="topCompanyYear" class="form-select form-select-sm" onchange="loadTopCompanies()">
+              <option value="">All years</option>
+              {% for y in years %}
+              <option value="{{ y }}">{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="chart-fixed-260 flex-grow-1" id="topCompanyWrap">
+          <canvas id="topCompanyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-1">Speaker Analysis</h3>
+    <p class="text-muted small mb-0">
+      Explore how individual speakers contribute across years, tracks, languages and companies.
+    </p>
+  </div>
+</div>
+
+<!-- Top: search + KPI -->
+<div class="row g-3 mb-3">
+
+  <!-- Search panel -->
+  <div class="col-xl-8 col-lg-7">
+    <div class="card shadow-sm glass-card">
+      <div class="card-body">
+        <div class="d-flex flex-wrap align-items-end gap-3">
+          <div class="flex-grow-1">
+            <label class="form-label small text-muted mb-1">Speaker</label>
+            <input id="speakerName" class="form-control" placeholder="Enter speaker name" list="speakerSuggestions">
+            <datalist id="speakerSuggestions"></datalist>
+          </div>
+          <div style="min-width: 160px;">
+            <label class="form-label small text-muted mb-1">Year (optional)</label>
+            <select id="speakerYear" class="form-select">
+              <option value="">All years</option>
+              {% for y in years %}
+              <option value="{{ y }}">{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-primary px-4" onclick="loadSpeakerAnalysis()">
+              Run analysis
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI card -->
+  <div class="col-xl-4 col-lg-5">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <div>
+            <h6 class="mb-1">Speaker overview</h6>
+            <small class="text-muted">Key stats for the selected speaker</small>
+          </div>
+          <div class="icon-badge">
+            <i class="bi bi-person-badge"></i>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-4">
+            <div class="text-muted small">Total talks</div>
+            <div class="fw-semibold fs-5" id="metricTotalTalks">–</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Active years</div>
+            <div class="fw-semibold fs-5" id="metricActiveYears">–</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Tracks covered</div>
+            <div class="fw-semibold fs-5" id="metricTracks">–</div>
+          </div>
+        </div>
+
+        <div class="mt-3 small text-muted" id="metricSummary">
+          Run an analysis to see how this speaker appears across the conference.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Middle: per-speaker charts -->
+<div class="row g-3">
+
+  <!-- Talks per year -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Talks per year</h6>
+            <small class="text-muted">
+              Year-over-year visibility of the selected speaker
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="speakerChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language distribution -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Language distribution</h6>
+            <small class="text-muted">
+              Share of talks in each conference language
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="speakerLangChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Track coverage -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Track coverage</h6>
+            <small class="text-muted">
+              Which program tracks this speaker appears in
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="speakerTrackChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Companies over time -->
+  <div class="col-xl-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-1">Companies over time</h6>
+            <small class="text-muted">
+              Organisations this speaker represented in each year
+            </small>
+          </div>
+        </div>
+        <div class="chart-fixed-260">
+          <canvas id="speakerCompanyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session table -->
+  <div class="col-12">
+    <div class="card shadow-sm glass-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Session details</h6>
+          <small class="text-muted">
+            All sessions for the selected speaker (filtered by year, if applied)
+          </small>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="small text-muted">
+              <tr>
+                <th>Year</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Track</th>
+                <th>Lang</th>
+                <th>Title</th>
+                <th>Company</th>
+              </tr>
+            </thead>
+            <tbody id="speakerSessionsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- TDWI Affiliation Analysis -->
+<div class="card shadow-sm mt-3" id="tdwiBlock" style="display:none;">
+  <div class="card-body">
+    <div class="d-flex align-items-start justify-content-between">
+      <div>
+        <h5 class="mb-1">TDWI affiliation analysis</h5>
+        <div class="text-muted small">
+        </div>
+      </div>
+
+      <div class="text-end">
+        <div class="small text-muted">TDWI sessions</div>
+        <div class="fs-4 fw-bold" id="tdwiTotal">0</div>
+      </div>
+    </div>
+
+    <!-- TDWI by-year chart -->
+    <div class="mt-3" style="height: 220px;">
+      <canvas id="tdwiYearChart"></canvas>
+    </div>
+
+    <!-- TDWI role breakdown -->
+    <div class="mt-3">
+      <div class="small text-muted mb-2"></div>
+      <div id="tdwiRoleBadges"></div>
+    </div>
+
+    <!-- TDWI sessions table -->
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="small text-muted">
+          <tr>
+            <th>Year</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Track</th>
+            <th>Lang</th>
+            <th>Title</th>
+            <th>Affiliation</th>
+          </tr>
+        </thead>
+        <tbody id="tdwiSessionsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<hr class="my-4">
+
+<!-- Bottom: global trend & ranking -->
+<div class="row g-3 align-items-stretch">
+
+  <!-- Unique speakers per year -->
+  <div class="col-lg-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h5 class="mb-1">Unique speakers per year</h5>
+            <small class="text-muted">Overall diversity of the conference speaker line-up</small>
+          </div>
+        </div>
+
+        <div class="chart-fixed-260 flex-grow-1" id="uniqueSpeakersWrap">
+          <canvas id="uniqueSpeakersChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top speakers -->
+  <div class="col-lg-6 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h5 class="mb-1">Top speakers</h5>
+            <small class="text-muted">Ranking by number of talks in the selected year</small>
+          </div>
+          <div style="min-width:150px;">
+            <select id="topSpeakerYear" class="form-select form-select-sm" onchange="loadTopSpeakers()">
+              <option value="">All years</option>
+              {% for y in years %}
+              <option value="{{ y }}">{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="chart-fixed-260 flex-grow-1" id="topSpeakerWrap">
+          <canvas id="topSpeakerChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<hr class="my-4">
+
+<div class="row g-3 align-items-stretch">
+
+  <!-- Speakers who changed companies (pie) -->
+  <div class="col-lg-5 col-12">
+    <div class="card shadow-sm glass-card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h5 class="mb-1">Speakers who changed companies</h5>
+            <small class="text-muted">How many speakers have represented 2+ companies across years</small>
+          </div>
+        </div>
+
+        <div class="chart-fixed-260 flex-grow-1">
+          <canvas id="speakerSwitchChart"></canvas>
+        </div>
+
+        <div class="mt-2 small text-muted" id="speakerSwitchHint"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- List of the speakers -->
+<div class="col-lg-7 col-12">
+  <div class="card shadow-sm glass-card h-100">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+        <div>
+          <h6 class="mb-1">Which speakers are they?</h6>
+          <small class="text-muted">Click a name to fill the Speaker search box</small>
+        </div>
+      </div>
+
+      <!-- TDWI experts (top 3) -->
+      <div class="table-responsive" style="max-height: 140px; overflow:auto;">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="small text-muted">
+            <tr>
+              <th>TDWI experts</th>
+              <th class="text-nowrap">Years</th>
+            </tr>
+          </thead>
+          <tbody id="tdwiExpertsBody"></tbody>
+        </table>
+      </div>
+
+      <hr class="my-2">
+
+      <!-- Original list: speakers who changed companies -->
+      <div class="table-responsive" style="max-height: 320px; overflow:auto;">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="small text-muted">
+            <tr>
+              <th>Speaker</th>
+              <th class="text-nowrap">#Companies</th>
+              <th>Companies</th>
+              <th class="text-nowrap">Years</th>
+            </tr>
+          </thead>
+          <tbody id="speakerSwitchListBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+
+
+{% endblock %}
